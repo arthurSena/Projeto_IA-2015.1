@@ -190,3 +190,80 @@ Nesse cenário, nós utilizaremos todos as variáveis do modelo e observaremos o
 
 ```
 
+
+#Treinando com emails que foram escritos usando HTML - Terceiro Modelo
+Nesse cenário, vamos utilizar a variável "format" a fim de predizer nossos e-mails. Tal variável afirma se um e-mail foi escrito usando apenas HTML ou não. Temos o palpite que e-mails que foram escritos em HTML apresentam uma boa probabilidade de serem considerados spam's.
+
+```{r}
+# treino[,"spam"]<- as.factor(treino$spam)
+# treino[,"format"]<- as.factor(treino$format)
+# 
+# #Usando o KNN
+# control = trainControl(method = "repeatedcv", number=10,repeats = 10)
+# knn_grid = expand.grid(k=c(1:20))
+# knn_model = train(spam~format,  data=treino ,method="knn",preProcess=c("range"),tuneGrid = knn_grid,trControl=control, na.action=na.omit)
+# 
+# #Usando o SVM
+# control <- trainControl(method="repeatedcv", number=10,repeats=10)
+# modelSvm <- train(spam~format, data=treino, method="svmRadial", trControl=control)
+# 
+# #Usando C50
+# control <- trainControl(method="repeatedcv", number=10, repeats=10)
+# modelC50<- train(spam~format, data=treino, method="C5.0", trControl=control)
+```
+
+```{r}
+# teste[,"spam"]<- as.factor(teste$spam)
+# teste[,"format"]<- as.factor(teste$format)
+# #SVM
+# pred_svm<-predict(modelSvm, newdata = teste)
+# CrossTable(teste$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
+#  precision  <- 62/71
+#  recall <- 62/367
+#  Fmeasure_svm <-  2 * precision * recall / (precision + recall)
+# 
+# #C50
+# pred_c50<-predict(modelC50, newdata = teste)
+# CrossTable(teste$spam, pred_c50, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
+#  precision  <- 225/272
+#  recall <- 225/367
+#  Fmeasure_c50 <-  2 * precision * recall / (precision + recall)
+# 
+# Modelos = c("ÁrvoreDec", "KNN", "SVM") 
+# Fmeasures = c(Fmeasure_c50,Fmeasure_knn,Fmeasure_svm)
+# df = data.frame(Modelos, Fmeasures)  
+# ggplot(df, aes(x = Modelos, y = Fmeasures)) + geom_bar(stat="identity")
+```
+
+#Analisando a importancia das vari´aveis
+
+```{r}
+knn_import <- varImp(knn_model, scale = FALSE)
+knn_import
+
+svm_import <- varImp(modelSvm, scale = FALSE)
+svm_import
+
+#TODO - SVM AND C50
+```
+
+Agora, vamos refazer nossos modelos usando as variáveis com maior influência na classificação dos modelos.
+
+
+
+```{r}
+treino[,"spam"]<- as.factor(treino$spam)
+#Usando o KNN
+control = trainControl(method = "repeatedcv", number=10,repeats = 10)
+knn_grid = expand.grid(k=c(1:20))
+knn_model = train(spam~num_char+format+line_breaks+number,  data=treino ,method="knn",preProcess=c("range"),tuneGrid = knn_grid,trControl=control, na.action=na.omit)
+
+#Usando o SVM
+control <- trainControl(method="repeatedcv", number=10,repeats=10)
+modelSvm <- train(spam~num_char+format+line_breaks+number+time+exclaim_mess, data=treino, method="svmRadial", trControl=control)
+
+#Usando C50
+control <- trainControl(method="repeatedcv", number=10, repeats=10)
+modelC50<- train(spam~num_char+format+line_breaks+number+time+exclaim_mess, data=treino, method="C5.0", trControl=control)
+```
+

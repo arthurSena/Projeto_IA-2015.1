@@ -77,7 +77,7 @@ modelC50<- train(spam ~ .,
                  data=treino, 
                  method="C5.0", 
                  trControl=control)
-
+treino_Fac <-  treino
 treino_fac[,"sent_email"] <- as.factor(treino_fac[,"sent_email"])
 treino_fac[,"to_multiple"] <- as.factor(treino_fac[,"to_multiple"])
 treino_fac[,"format"] <- as.factor(treino_fac[,"format"])
