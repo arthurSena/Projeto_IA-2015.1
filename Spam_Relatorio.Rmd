@@ -143,3 +143,50 @@ Fmeasures = c(Fmeasure_c50,Fmeasure_knn,Fmeasure_svm)
 df = data.frame(Modelos, Fmeasures)  
 ggplot(df, aes(x = Modelos, y = Fmeasures)) + geom_bar(stat="identity")
 ```
+
+#Quantidade Igual de emails spam e not-spam - Segunda Predição
+Nesse cenário, modificaremos nosso conjunto de testes de modo que ele apresente um quantidade igual de emails spam e not-spam.
+```{r}
+temp1 <- filter(teste, spam == 0)[1:400,]
+temp2 <- filter(teste, spam == 1)
+teste_proporcional <- rbind(temp1,temp2)
+```
+Feito isso, vamos prever novamente nosso teste e observar como nossos modelos iniciais se comportam.
+
+```{r}
+teste_proporcional[,"spam"]<- as.factor(teste_proporcional$spam)
+#KNN
+pred_knn<-predict(knn_model, newdata = as.data.frame(teste_proporcional),na.action=na.omit)
+CrossTable(teste_proporcional$spam, pred_knn, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
+ precision  <- 365/392
+ recall <- 365/367
+ Fmeasure_knn <-  2 * precision * recall / (precision + recall)
+
+#SVM
+pred_svm<-predict(modelSvm, newdata = teste_proporcional)
+CrossTable(teste_proporcional$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
+ precision  <- 62/67
+ recall <- 62/367
+ Fmeasure_svm <-  2 * precision * recall / (precision + recall)
+
+#C50
+pred_c50<-predict(modelC50, newdata = teste_proporcional)
+CrossTable(teste_proporcional$spam, pred_c50, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
+ precision  <- 208/212
+ recall <- 208/367
+ Fmeasure_c50 <-  2 * precision * recall / (precision + recall)
+
+Modelos = c("ÁrvoreDec", "KNN", "SVM") 
+Fmeasures = c(Fmeasure_c50,Fmeasure_knn,Fmeasure_svm)
+df = data.frame(Modelos, Fmeasures)  
+ggplot(df, aes(x = Modelos, y = Fmeasures)) + geom_bar(stat="identity")
+```
+
+Observando o gráfico, notamos que alguns de nossos modelos apresentaram uma certa queda de desempenho.
+
+#Utilizando Todas as Variáveis - Segundo Modelo
+Nesse cenário, nós utilizaremos todos as variáveis do modelo e observaremos o resultado
+```{r}
+
+```
+
