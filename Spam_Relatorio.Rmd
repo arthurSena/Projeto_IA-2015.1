@@ -17,7 +17,6 @@ require("grid")
 require("C50")
 ```
 
-
 #Introdução
 __Universidade Federal de Campina Grande - DSC  __  
 __Disciplina: Inteligência Artificial  __  
@@ -117,19 +116,28 @@ knn_grid = expand.grid(k=c(1:20))
 knn_model = train(spam~num_char+sent_email+to_multiple+format+line_breaks+number+re_subj,  data=treino ,method="knn",preProcess=c("range"),tuneGrid = knn_grid,trControl=control, na.action=na.omit)
 
 #Usando o SVM
-### finding optimal value of a tuning parameter
+### Encontrando o melhor valor para um parametro de tuning
 sigDist <- sigest(spam~num_char+sent_email+to_multiple+format+line_breaks+number+re_subj, data = treino, frac = 1)
-### creating a grid of two tuning parameters, .sigma comes from the earlier line. we are trying to find best value of .C
 svmTuneGrid <- data.frame(.sigma = sigDist[1], .C = 2^(-2:7))
-
 control <- trainControl(method="repeatedcv", number=10,repeats=10)
 modelSvm <- train(spam~num_char+sent_email+to_multiple+format+line_breaks+number+re_subj, data=treino, method="svmRadial", preProc = c("center", "scale"),tuneGrid = svmTuneGrid, trControl=control)
-
-modelSvm <- train(spam~., data=treino, method="svmRadial", preProc = c("center", "scale"),tuneGrid = svmTuneGrid, trControl=control)
 
 #Usando C50
 control <- trainControl(method="repeatedcv", number=10, repeats=10)
 modelC50<- train(spam~num_char+sent_email+to_multiple+format+line_breaks+number+re_subj, data=treino, method="C5.0", trControl=control)
+```
+
+#Analisando a importancia das variáveis
+Podemos utilizar a função "vaiImp" a fim de verificar a importancia de cada variável em cada modelo.
+```{r}
+knn_import <- varImp(knn_model, scale = T)
+plot(knn_import)
+
+svm_import <- varImp(modelSvm, scale = T)
+plot(svm_import)
+
+c50_import <- varImp(modelC50, scale = T)
+plot(c50_import)
 ```
 
 #Primeira Predição
@@ -137,19 +145,24 @@ Com os modelos criados podemos fazer nossa primeira predição em cima dos dados
 
 ```{r  message=FALSE, warning=FALSE}
 teste[,"spam"]<- as.factor(teste$spam)
+resultados_knn <- data.frame()
+resultados_c50 <- data.frame()
+resultados_svm <- data.frame()
 #KNN
 pred_knn<-predict(knn_model, newdata = as.data.frame(teste),na.action=na.omit)
 CrossTable(teste$spam, pred_knn, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
  precision  <- 362/428
  recall <- 362/367
  Fmeasure_knn <-  2 * precision * recall / (precision + recall)
+ resultados_knn<-rbind(resultados_knn,data.frame(Predicao = 1, Prec = precision, Recall = recall,Fmeasure = Fmeasure_knn)) 
 
 #SVM
 pred_svm<-predict(modelSvm, newdata = teste)
 CrossTable(teste$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 62/71
- recall <- 62/367
+ precision  <- 63/73
+ recall <- 63/367
  Fmeasure_svm <-  2 * precision * recall / (precision + recall)
+ resultados_svm<-rbind(resultados_svm,data.frame(Predicao = 1, Prec = precision, Recall = recall,Fmeasure = Fmeasure_svm)) 
 
 #C50
 pred_c50<-predict(modelC50, newdata = teste)
@@ -157,7 +170,8 @@ CrossTable(teste$spam, pred_c50, prop.chisq = FALSE, prop.c = FALSE, prop.r = FA
  precision  <- 225/272
  recall <- 225/367
  Fmeasure_c50 <-  2 * precision * recall / (precision + recall)
-str()
+ resultados_c50<-rbind(resultados_c50,data.frame(Predicao = 1, Prec = precision, Recall = recall,Fmeasure = Fmeasure_c50)) 
+
 Modelos = c("ÁrvoreDec", "KNN", "SVM") 
 Fmeasures = c(Fmeasure_c50,Fmeasure_knn,Fmeasure_svm)
 df = data.frame(Modelos, Fmeasures)  
@@ -178,23 +192,26 @@ teste_proporcional[,"spam"]<- as.factor(teste_proporcional$spam)
 #KNN
 pred_knn<-predict(knn_model, newdata = as.data.frame(teste_proporcional),na.action=na.omit)
 CrossTable(teste_proporcional$spam, pred_knn, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 365/392
- recall <- 365/367
+ precision  <- 363/390
+ recall <- 363/367
  Fmeasure_knn <-  2 * precision * recall / (precision + recall)
+ resultados_knn<-rbind(resultados_knn,data.frame(Predicao = 2, Prec = precision, Recall = recall,Fmeasure = Fmeasure_knn)) 
 
 #SVM
 pred_svm<-predict(modelSvm, newdata = teste_proporcional)
 CrossTable(teste_proporcional$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 62/67
- recall <- 62/367
+ precision  <- 63/66
+ recall <- 63/367
  Fmeasure_svm <-  2 * precision * recall / (precision + recall)
+ resultados_svm<-rbind(resultados_svm,data.frame(Predicao = 2, Prec = precision, Recall = recall,Fmeasure = Fmeasure_svm)) 
 
 #C50
 pred_c50<-predict(modelC50, newdata = teste_proporcional)
 CrossTable(teste_proporcional$spam, pred_c50, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 208/212
- recall <- 208/367
+ precision  <- 225/236
+ recall <- 225/367
  Fmeasure_c50 <-  2 * precision * recall / (precision + recall)
+ resultados_c50<-rbind(resultados_c50,data.frame(Predicao = 2, Prec = precision, Recall = recall,Fmeasure = Fmeasure_c50)) 
 
 Modelos = c("ÁrvoreDec", "KNN", "SVM") 
 Fmeasures = c(Fmeasure_c50,Fmeasure_knn,Fmeasure_svm)
@@ -226,29 +243,47 @@ control <- trainControl(method="repeatedcv", number=10, repeats=10)
 modelC50<- train(spam~., data=treino, method="C5.0", trControl=control)
 ```
 
-Agora vamos realizar nossas predições com os novos modelos.
+#Analisando a importancia das variáveis
+Podemos utilizar a função "vaiImp" a fim de verificar a importancia de cada variável em cada modelo.
+```{r}
+knn_import <- varImp(knn_model, scale = T)
+plot(knn_import)
+
+svm_import <- varImp(modelSvm, scale = T)
+plot(svm_import)
+
+c50_import <- varImp(modelC50, scale = T)
+plot(c50_import)
+```
+
+
+#Utilizando Todas as Variáveis - Terceira Predição
+Agora vamos realizar nossas predições com os novos modelos criados.
 ```{r  message=FALSE, warning=FALSE}
 teste[,"spam"]<- as.factor(teste$spam)
 #KNN
 pred_knn<-predict(knn_model, newdata = as.data.frame(teste),na.action=na.omit)
 CrossTable(teste$spam, pred_knn, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <-276/667
+ precision  <-276/668
  recall <- 276/367
  Fmeasure_knn <-  2 * precision * recall / (precision + recall)
+ resultados_knn<-rbind(resultados_knn,data.frame(Predicao = 3, Prec = precision, Recall = recall,Fmeasure = Fmeasure_knn)) 
 
 #SVM
 pred_svm<-predict(modelSvm, newdata = teste)
 CrossTable(teste$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 261/755
- recall <- 261/367
+ precision  <- 262/753
+ recall <- 262/367
  Fmeasure_svm <-  2 * precision * recall / (precision + recall)
+ resultados_svm<-rbind(resultados_svm,data.frame(Predicao = 3, Prec = precision, Recall = recall,Fmeasure = Fmeasure_svm)) 
 
 #C50
 pred_c50<-predict(modelC50, newdata = teste)
 CrossTable(teste$spam, pred_c50, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 316/1034
- recall <- 316/367
+ precision  <- 312/1288
+ recall <- 312/367
  Fmeasure_c50 <-  2 * precision * recall / (precision + recall)
+ resultados_c50<-rbind(resultados_c50,data.frame(Predicao = 3, Prec = precision, Recall = recall,Fmeasure = Fmeasure_c50)) 
 
 Modelos = c("ÁrvoreDec", "KNN", "SVM") 
 Fmeasures = c(Fmeasure_c50,Fmeasure_knn,Fmeasure_svm)
@@ -258,81 +293,58 @@ ggplot(df, aes(x = Modelos, y = Fmeasures)) + geom_bar(stat="identity")
 
 Notamos que nossos modelos, principalmente o SVM, apresentaram uma quantidade de acertos maior, porém eles também começaram a errar mais do que anteriormente o que no nosso contexto é um erro bem grave.
 
-#Treinando com emails que foram escritos usando HTML - Terceiro Modelo
-Nesse cenário, vamos utilizar a variável "format" a fim de predizer nossos e-mails. Tal variável afirma se um e-mail foi escrito usando apenas HTML ou não. Temos o palpite que e-mails que foram escritos em HTML apresentam uma boa probabilidade de serem considerados spam's.
+#Utilizando Todas as Variáveis - Quarta Predição
+Vamos novamente utilizar nossos modelos para prever um conjunto de dados mais balanceado de e-mails.
+```{r warning=FALSE, message=FALSE}
+teste_proporcional[,"spam"]<- as.factor(teste_proporcional$spam)
+#KNN
+pred_knn<-predict(knn_model, newdata = as.data.frame(teste_proporcional),na.action=na.omit)
+CrossTable(teste_proporcional$spam, pred_knn, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
+ precision  <- 276/374
+ recall <- 276/367
+ Fmeasure_knn <-  2 * precision * recall / (precision + recall)
+ resultados_knn<-rbind(resultados_knn,data.frame(Predicao = 4, Prec = precision, Recall = recall,Fmeasure = Fmeasure_knn)) 
 
-```{r}
-# treino[,"spam"]<- as.factor(treino$spam)
-# treino[,"format"]<- as.factor(treino$format)
-# 
-# #Usando o KNN
-# control = trainControl(method = "repeatedcv", number=10,repeats = 10)
-# knn_grid = expand.grid(k=c(1:20))
-# knn_model = train(spam~format,  data=treino ,method="knn",preProcess=c("range"),tuneGrid = knn_grid,trControl=control, na.action=na.omit)
-# 
-# #Usando o SVM
-# control <- trainControl(method="repeatedcv", number=10,repeats=10)
-# modelSvm <- train(spam~format, data=treino, method="svmRadial", trControl=control)
-# 
-# #Usando C50
-# control <- trainControl(method="repeatedcv", number=10, repeats=10)
-# modelC50<- train(spam~format, data=treino, method="C5.0", trControl=control)
+#SVM
+pred_svm<-predict(modelSvm, newdata = teste_proporcional)
+CrossTable(teste_proporcional$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
+ precision  <- 262/373
+ recall <- 262/367
+ Fmeasure_svm <-  2 * precision * recall / (precision + recall)
+ resultados_svm<-rbind(resultados_svm,data.frame(Predicao = 4, Prec = precision, Recall = recall,Fmeasure = Fmeasure_svm)) 
+
+#C50
+pred_c50<-predict(modelC50, newdata = teste_proporcional)
+CrossTable(teste_proporcional$spam, pred_c50, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
+ precision  <- 316/367
+ recall <- 316/367
+ Fmeasure_c50 <-  2 * precision * recall / (precision + recall)
+ resultados_c50<-rbind(resultados_c50,data.frame(Predicao = 4, Prec = precision, Recall = recall,Fmeasure = Fmeasure_c50)) 
+
+Modelos = c("ÁrvoreDec", "KNN", "SVM") 
+Fmeasures = c(Fmeasure_c50,Fmeasure_knn,Fmeasure_svm)
+df = data.frame(Modelos, Fmeasures)  
+ggplot(df, aes(x = Modelos, y = Fmeasures)) + geom_bar(stat="identity")
 ```
 
-```{r}
-# teste[,"spam"]<- as.factor(teste$spam)
-# teste[,"format"]<- as.factor(teste$format)
-# #SVM
-# pred_svm<-predict(modelSvm, newdata = teste)
-# CrossTable(teste$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
-#  precision  <- 62/71
-#  recall <- 62/367
-#  Fmeasure_svm <-  2 * precision * recall / (precision + recall)
-# 
-# #C50
-# pred_c50<-predict(modelC50, newdata = teste)
-# CrossTable(teste$spam, pred_c50, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
-#  precision  <- 225/272
-#  recall <- 225/367
-#  Fmeasure_c50 <-  2 * precision * recall / (precision + recall)
-# 
-# Modelos = c("ÁrvoreDec", "KNN", "SVM") 
-# Fmeasures = c(Fmeasure_c50,Fmeasure_knn,Fmeasure_svm)
-# df = data.frame(Modelos, Fmeasures)  
-# ggplot(df, aes(x = Modelos, y = Fmeasures)) + geom_bar(stat="identity")
-```
-
-#Analisando a importancia das variáveis
+#Resultados e Conclusões
+Para resumir todos os resultados, nós construímos a tabela abaixo que resume o que obtivemos de valores para cada métrica com os nossos modelos executando em diferentes cenários.
 
 ```{r}
-knn_import <- varImp(knn_model, scale = FALSE)
-knn_import
+resultados_c50$Model <- c("c50","c50","c50","c50")
+resultados_knn$Model <- c("knn","knn","knn","knn")
+resultados_svm$Model <- c("svm","svm","svm","svm")
 
-svm_import <- varImp(modelSvm, scale = FALSE)
-svm_import
+resultado_final <- rbind(resultados_c50,resultados_knn,resultados_svm)
 
-c50_import <- varImp(modelC50, scale = FALSE)
-c50_import
+ggplot(data=resultado_final, aes(x=Predicao, y=Prec,group=Model,colour=Model)) +
+    geom_line() + geom_point()
 
+ggplot(data=resultado_final, aes(x=Predicao, y=Recall,group=Model,colour=Model)) +
+    geom_line() + geom_point()
+
+ggplot(data=resultado_final, aes(x=Predicao, y= Fmeasure,group=Model,colour=Model)) +
+    geom_line() + geom_point()
 ```
 
-Agora, vamos refazer nossos modelos usando as variáveis com maior influência na classificação dos modelos.
-
-
-
-```{r}
-treino[,"spam"]<- as.factor(treino$spam)
-#Usando o KNN
-control = trainControl(method = "repeatedcv", number=10,repeats = 10)
-knn_grid = expand.grid(k=c(1:20))
-knn_model = train(spam~num_char+format+line_breaks+number,  data=treino ,method="knn",preProcess=c("range"),tuneGrid = knn_grid,trControl=control, na.action=na.omit)
-
-#Usando o SVM
-control <- trainControl(method="repeatedcv", number=10,repeats=10)
-modelSvm <- train(spam~num_char+format+line_breaks+number+time+exclaim_mess, data=treino, method="svmRadial", trControl=control)
-
-#Usando C50
-control <- trainControl(method="repeatedcv", number=10, repeats=10)
-modelC50<- train(spam~num_char+format+line_breaks+number+time+exclaim_mess, data=treino, method="C5.0", trControl=control)
-```
-
+Visualizando os resultados, acreditamos que a conclusão mais importante é que as métricas de nossos modelos tendem a melhorar ou piorar dependendo do cenário em que os modelos foram testados ou configurados. Os gráficos apresentados no relatório técnico dão suporte a nossa conclusão.
