@@ -61,10 +61,6 @@ levels(emails[,"number"]) <- c(1,0,-1)
 emails[,"number"] <- as.numeric(emails[,"number"])
 emails[,"winner"] <- as.numeric(emails[,"winner"]) 
 
-
-
-
-
 df <- as.data.frame(cor(emails)[,1])
 df <- cbind(Variaveis = rownames(df), df)
 rownames(df) <- NULL
@@ -151,8 +147,8 @@ resultados_svm <- data.frame()
 #KNN
 pred_knn<-predict(knn_model, newdata = as.data.frame(teste),na.action=na.omit)
 CrossTable(teste$spam, pred_knn, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 362/428
- recall <- 362/367
+ precision  <- 364/430
+ recall <- 364/367
  Fmeasure_knn <-  2 * precision * recall / (precision + recall)
  resultados_knn<-rbind(resultados_knn,data.frame(Predicao = 1, Prec = precision, Recall = recall,Fmeasure = Fmeasure_knn)) 
 
@@ -231,9 +227,8 @@ knn_grid = expand.grid(k=c(1:20))
 knn_model = train(spam~.,  data=treino ,method="knn",preProcess=c("range"),tuneGrid = knn_grid,trControl=control, na.action=na.omit)
 
 #Usando o SVM
-### finding optimal value of a tuning parameter
+### Encontrando o melhor valor para o parametro tuning
 sigDist <- sigest(spam~num_char+sent_email+to_multiple+format+line_breaks+number+re_subj, data = treino, frac = 1)
-### creating a grid of two tuning parameters, .sigma comes from the earlier line. we are trying to find best value of .C
 svmTuneGrid <- data.frame(.sigma = sigDist[1], .C = 2^(-2:7))
 control <- trainControl(method="repeatedcv", number=10,repeats=10)
 modelSvm <- train(spam~., data=treino, method="svmRadial", preProc = c("center", "scale"),tuneGrid = svmTuneGrid, trControl=control)
@@ -264,7 +259,7 @@ teste[,"spam"]<- as.factor(teste$spam)
 #KNN
 pred_knn<-predict(knn_model, newdata = as.data.frame(teste),na.action=na.omit)
 CrossTable(teste$spam, pred_knn, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <-276/668
+ precision  <-276/666
  recall <- 276/367
  Fmeasure_knn <-  2 * precision * recall / (precision + recall)
  resultados_knn<-rbind(resultados_knn,data.frame(Predicao = 3, Prec = precision, Recall = recall,Fmeasure = Fmeasure_knn)) 
@@ -272,7 +267,7 @@ CrossTable(teste$spam, pred_knn, prop.chisq = FALSE, prop.c = FALSE, prop.r = FA
 #SVM
 pred_svm<-predict(modelSvm, newdata = teste)
 CrossTable(teste$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 262/753
+ precision  <- 262/752
  recall <- 262/367
  Fmeasure_svm <-  2 * precision * recall / (precision + recall)
  resultados_svm<-rbind(resultados_svm,data.frame(Predicao = 3, Prec = precision, Recall = recall,Fmeasure = Fmeasure_svm)) 
@@ -280,8 +275,8 @@ CrossTable(teste$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE, prop.r = FA
 #C50
 pred_c50<-predict(modelC50, newdata = teste)
 CrossTable(teste$spam, pred_c50, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 312/1288
- recall <- 312/367
+ precision  <- 316/1034
+ recall <- 316/367
  Fmeasure_c50 <-  2 * precision * recall / (precision + recall)
  resultados_c50<-rbind(resultados_c50,data.frame(Predicao = 3, Prec = precision, Recall = recall,Fmeasure = Fmeasure_c50)) 
 
@@ -316,7 +311,7 @@ CrossTable(teste_proporcional$spam, pred_svm, prop.chisq = FALSE, prop.c = FALSE
 #C50
 pred_c50<-predict(modelC50, newdata = teste_proporcional)
 CrossTable(teste_proporcional$spam, pred_c50, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual', 'predicted'))
- precision  <- 316/367
+ precision  <- 316/612
  recall <- 316/367
  Fmeasure_c50 <-  2 * precision * recall / (precision + recall)
  resultados_c50<-rbind(resultados_c50,data.frame(Predicao = 4, Prec = precision, Recall = recall,Fmeasure = Fmeasure_c50)) 
